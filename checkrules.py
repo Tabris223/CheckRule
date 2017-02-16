@@ -60,7 +60,7 @@ df_forth_phone_company = change_col_name(df_forth_phone_company)
 
 # Concat all the seperated dataframe into one                               
 df_phone_company_address = pd.concat([df_main_phone_company,df_second_phone_company,df_third_phone_company,df_forth_phone_company])
-
+df_phone_company_address.TEL = df_phone_company_address.TEL.astype('str')
 
 # Checking M_AFR_AP_1(same telephone diff work_name)
 rule = 'M_AFR_AP_1'
@@ -68,8 +68,12 @@ print ('Checking M_AFR_AP_1...')
 tic = time.time()
 # Select the records with notnull telephone no.
 df_M_AFR_AP_1 = df_phone_company_address[df_phone_company_address.TEL.notnull()]
+
 # Delete duplicated (TEL,WORK_NAME),remain distinct (TEL,WORK_NAME)
 df_M_AFR_AP_1 = df_M_AFR_AP_1.drop_duplicates(['TEL','WORK_NAME'])
+# Delete duplicated WORK_NAME,remain distinct WORK_NAME
+#df_M_AFR_AP_1 = df_M_AFR_AP_1[df_M_AFR_AP_1.WORK_NAME.notnull()].drop_duplicates(['WORK_NAME'])
+
 # Single Telephone with lots WORK_NAME
 df_M_AFR_AP_1_bad_phone_cnt = df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME']\
                         [df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME'].values>1] 
@@ -111,8 +115,12 @@ print ('Checking M_AFR_AP_2...')
 tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_2 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
+
 # Delete duplicated (TEL,WORKNAME).,remain distinct (TEL,WORKNAME).
 df_M_AFR_AP_2 = df_M_AFR_AP_2.drop_duplicates(['WORK_NAME','TEL'])
+# Delete duplicated TEL,remain distinct TEL
+#df_M_AFR_AP_2 = df_M_AFR_AP_2[df_M_AFR_AP_2.TEL.notnull()].drop_duplicates(['TEL'])
+
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_2_bad_name_cnt = df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL']\
                         [df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL'].values>1] 
@@ -152,14 +160,18 @@ print ('\n')
 rule = 'M_AFR_AP_3'
 print ('Checking M_AFR_AP_3...')
 
-frontnum = 6
+frontnum = 8
 
 tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_3 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
+
+
 # Delete duplicated TELEPHONE NO.,remain distinct TELEPHONE NO.
 df_M_AFR_AP_3 = df_M_AFR_AP_3.drop_duplicates(['WORK_NAME','TEL'])
-df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.astype('str')
+# Delete duplicated TEL,remain distinct TEL
+#df_M_AFR_AP_3 = df_M_AFR_AP_3[df_M_AFR_AP_3.TEL.notnull()].drop_duplicates(['TEL'])
+
 df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.str.slice(0,frontnum)                             
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_3_bad_name_cnt = df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL']\
