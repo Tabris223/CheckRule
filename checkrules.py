@@ -61,6 +61,7 @@ df_forth_phone_company = change_col_name(df_forth_phone_company)
 # Concat all the seperated dataframe into one
 df_phone_company_address = pd.concat([df_main_phone_company,df_second_phone_company,df_third_phone_company,df_forth_phone_company])
 
+
 # Checking M_AFR_AP_1(same telephone diff work_name)
 rule = 'M_AFR_AP_1'
 print ('Checking M_AFR_AP_1...')
@@ -91,7 +92,7 @@ count_bad_M_AFR_AP_1 = len(M_AFR_AP_1_bad_list[M_AFR_AP_1_bad_list.bad == 1])
 if hit_bad_M_AFR_AP_1 != 0:
     h_M_AFR_AP_1 = 1
 else:
-    h_M_AFR_AP_0 = 0
+    h_M_AFR_AP_1 = 0
 if count_bad_M_AFR_AP_1 != 0:
     c_M_AFR_AP_1 = 1
 else:
@@ -158,7 +159,7 @@ print ('\n')
 # Checking M_AFR_AP_3(same work_name diff telephone[:frontnum])
 rule = 'M_AFR_AP_3'
 print ('Checking M_AFR_AP_3...')
-frontnum = 6
+frontnum = 2
 tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_3 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
@@ -199,5 +200,51 @@ in_df = {'rule':rule,'effective':h_M_AFR_AP_3,'hit_counts':hit_bad_M_AFR_AP_3,'i
 result = result.append(in_df,ignore_index = True)
 toc = time.time()
 print ('M_AFR_AP_3 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
+
+
+# Checking M_AFR_AP_4(same telephone diff WORK_ADDRESS)
+rule = 'M_AFR_AP_4'
+print ('Checking M_AFR_AP_4...')
+tic = time.time()
+# Select the records with notnull telephone no.
+df_M_AFR_AP_4 = df_phone_company_address[df_phone_company_address.TEL.notnull()]
+
+# Delete duplicated (TEL,WORK_ADDRESS),remain distinct (TEL,WORK_ADDRESS)
+df_M_AFR_AP_4 = df_M_AFR_AP_4.drop_duplicates(['TEL','WORK_ADDRESS'])
+# Delete duplicated WORK_ADDRESS,remain distinct WORK_ADDRESS
+#df_M_AFR_AP_4 = df_M_AFR_AP_4[df_M_AFR_AP_4.WORK_ADDRESS.notnull()].drop_duplicates(['WORK_ADDRESS'])
+
+# Single Telephone with lots WORK_ADDRESS
+df_M_AFR_AP_4_bad_phone_cnt = df_M_AFR_AP_4.groupby(by = 'TEL').count()['WORK_ADDRESS']\
+                        [df_M_AFR_AP_4.groupby(by = 'TEL').count()['WORK_ADDRESS'].values>1]
+df_M_AFR_AP_4_bad_phone = df_M_AFR_AP_4_bad_phone_cnt.index
+df_M_AFR_AP_4_bad = df_phone_company_address[df_phone_company_address.TEL.isin(df_M_AFR_AP_4_bad_phone)]
+# find the original index
+M_AFR_AP_4_bad_index = set(df_M_AFR_AP_4_bad.ori_index)
+# M_AFR_AP_1's bad list
+M_AFR_AP_4_bad_list = df_rule_check.loc[M_AFR_AP_4_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_4 = len(M_AFR_AP_4_bad_list)
+# The number of records in black list which detectd by the rules
+count_bad_M_AFR_AP_4 = len(M_AFR_AP_4_bad_list[M_AFR_AP_4_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_4 != 0:
+    h_M_AFR_AP_4 = 1
+else:
+    h_M_AFR_AP_4 = 0
+if count_bad_M_AFR_AP_4 != 0:
+    c_M_AFR_AP_4 = 1
+else:
+    c_M_AFR_AP_4 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_4 = float(count_bad_M_AFR_AP_4)/hit_bad_M_AFR_AP_4
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_4,'hit_counts':hit_bad_M_AFR_AP_4,'is_in_bad':c_M_AFR_AP_4,'in_bad_ratio':ratio_M_AFR_AP_4}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_4 finished')
 print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
