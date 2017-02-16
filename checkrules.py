@@ -295,3 +295,49 @@ print ('M_AFR_AP_5 finished')
 print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
 
+
+# Checking M_AFR_AP_6(SAME WORK_ADDRESS diff TELEPHONE[:frontnum])
+rule = 'M_AFR_AP_6'
+print ('Checking M_AFR_AP_6...')
+tic = time.time()
+# Select the records with notnull telephone no.
+df_M_AFR_AP_6 = df_phone_company_address[df_phone_company_address.WORK_ADDRESS.notnull()]
+df_M_AFR_AP_6.TEL = df_M_AFR_AP_6.TEL.str.slice(0,frontnum)
+
+# Delete duplicated (WORK_ADDRESS,TEL),remain distinct (WORK_ADDRESS,TEL)
+df_M_AFR_AP_6 = df_M_AFR_AP_6.drop_duplicates(['WORK_ADDRESS','TEL'])
+# Delete duplicated TEL,remain distinct TEL
+#df_M_AFR_AP_6 = df_M_AFR_AP_6[df_M_AFR_AP_6.TEL.notnull()].drop_duplicates(['TEL'])
+
+# Single Telephone with lots WORK_ADDRESS
+df_M_AFR_AP_6_bad_phone_cnt = df_M_AFR_AP_6.groupby(by = 'WORK_ADDRESS').count()['TEL']\
+                        [df_M_AFR_AP_6.groupby(by = 'WORK_ADDRESS').count()['TEL'].values>1]
+df_M_AFR_AP_6_bad_phone = df_M_AFR_AP_6_bad_phone_cnt.index
+df_M_AFR_AP_6_bad = df_phone_company_address[df_phone_company_address.WORK_ADDRESS.isin(df_M_AFR_AP_6_bad_phone)]
+# find the original index
+M_AFR_AP_6_bad_index = set(df_M_AFR_AP_6_bad.ori_index)
+# M_AFR_AP_6's bad list
+M_AFR_AP_6_bad_list = df_rule_check.loc[M_AFR_AP_6_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_6 = len(M_AFR_AP_6_bad_list)
+# The number of records in black list which detectd by the rules
+count_bad_M_AFR_AP_6 = len(M_AFR_AP_6_bad_list[M_AFR_AP_6_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_6 != 0:
+    h_M_AFR_AP_6 = 1
+else:
+    h_M_AFR_AP_6 = 0
+if count_bad_M_AFR_AP_6 != 0:
+    c_M_AFR_AP_6 = 1
+else:
+    c_M_AFR_AP_6 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_6 = float(count_bad_M_AFR_AP_6)/hit_bad_M_AFR_AP_6
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_6,'hit_counts':hit_bad_M_AFR_AP_6,'is_in_bad':c_M_AFR_AP_6,'in_bad_ratio':ratio_M_AFR_AP_6}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_6 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
