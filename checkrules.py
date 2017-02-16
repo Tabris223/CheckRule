@@ -24,7 +24,7 @@ Rule: M_AFR_AP_1 ~ 8
 
 The features of above rules as below:
 1. Telephone No.
-2. Company Name 
+2. Company Name
 3. Company Address
 
 The strategy of checking these rules:
@@ -36,20 +36,20 @@ The strategy of checking these rules:
 '''
 
 
-# create a DataFrame including company phone no. and company name 
+# create a DataFrame including company phone no. and company name
 def change_col_name(dataframes):
     dataframes.columns = ['TEL','WORK_NAME','WORK_ADDRESS']
     dataframes['ori_index'] = dataframes.index
     return dataframes
 
 # Seperate the Feature columns out of 'Info_sheet' of aplicants
-# Primary applicant 
+# Primary applicant
 df_main_phone_company = df_rule_check[['AP_WORKUNITTEL','AP_WORKUNITNAME','AP_CORPADDR1']]
-# Second applicant 
+# Second applicant
 df_second_phone_company = df_rule_check[['AP_WORKUNITTEL_N1','AP_WORKUNITNAME_N1','AP_CORPADDR1_N1']]
 # Third applicant
 df_third_phone_company = df_rule_check[['AP_WORKUNITTEL_N2','AP_WORKUNITNAME_N2','AP_CORPADDR1_N2']]
-# Forth applicant                
+# Forth applicant
 df_forth_phone_company = df_rule_check[['AP_WORKUNITTEL_N3','AP_WORKUNITNAME_N3','AP_CORPADDR1_N3']]
 # Change the column's name to ['TEL','NAME','ADDRESS']
 df_main_phone_company = change_col_name(df_main_phone_company)
@@ -58,9 +58,8 @@ df_third_phone_company = change_col_name(df_third_phone_company)
 df_forth_phone_company = change_col_name(df_forth_phone_company)
 
 
-# Concat all the seperated dataframe into one                               
+# Concat all the seperated dataframe into one
 df_phone_company_address = pd.concat([df_main_phone_company,df_second_phone_company,df_third_phone_company,df_forth_phone_company])
-df_phone_company_address.TEL = df_phone_company_address.TEL.astype('str')
 
 # Checking M_AFR_AP_1(same telephone diff work_name)
 rule = 'M_AFR_AP_1'
@@ -76,7 +75,7 @@ df_M_AFR_AP_1 = df_M_AFR_AP_1.drop_duplicates(['TEL','WORK_NAME'])
 
 # Single Telephone with lots WORK_NAME
 df_M_AFR_AP_1_bad_phone_cnt = df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME']\
-                        [df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME'].values>1] 
+                        [df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME'].values>1]
 df_M_AFR_AP_1_bad_phone = df_M_AFR_AP_1_bad_phone_cnt.index
 df_M_AFR_AP_1_bad = df_phone_company_address[df_phone_company_address.TEL.isin(df_M_AFR_AP_1_bad_phone)]
 # find the original index
@@ -101,7 +100,7 @@ else:
 ratio_M_AFR_AP_1 = float(count_bad_M_AFR_AP_1)/hit_bad_M_AFR_AP_1
 # input into result
 in_df = {'rule':[rule],'effective':[h_M_AFR_AP_1],'hit_counts':hit_bad_M_AFR_AP_1,'is_in_bad':[c_M_AFR_AP_1],'in_bad_ratio':[ratio_M_AFR_AP_1]}
-result = DataFrame(in_df)   
+result = DataFrame(in_df)
 toc = time.time()
 print ('M_AFR_AP_1 finished')
 print ('cost time: %.2fs' %(toc-tic))
@@ -123,7 +122,7 @@ df_M_AFR_AP_2 = df_M_AFR_AP_2.drop_duplicates(['WORK_NAME','TEL'])
 
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_2_bad_name_cnt = df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL']\
-                        [df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL'].values>1] 
+                        [df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL'].values>1]
 df_M_AFR_AP_2_bad_name = df_M_AFR_AP_2_bad_name_cnt.index
 df_M_AFR_AP_2_bad = df_phone_company_address[df_phone_company_address.WORK_NAME.isin(df_M_AFR_AP_2_bad_name)]
 # find the original index
@@ -148,7 +147,7 @@ else:
 ratio_M_AFR_AP_2 = float(count_bad_M_AFR_AP_2)/hit_bad_M_AFR_AP_2
 # input into result
 in_df = {'rule':rule,'effective':h_M_AFR_AP_2,'hit_counts':hit_bad_M_AFR_AP_2,'is_in_bad':c_M_AFR_AP_2,'in_bad_ratio':ratio_M_AFR_AP_2}
-result = result.append(in_df,ignore_index = True)  
+result = result.append(in_df,ignore_index = True)
 toc = time.time()
 print ('M_AFR_AP_2 finished')
 print ('cost time: %.2fs' %(toc-tic))
@@ -159,23 +158,18 @@ print ('\n')
 # Checking M_AFR_AP_3(same work_name diff telephone[:frontnum])
 rule = 'M_AFR_AP_3'
 print ('Checking M_AFR_AP_3...')
-
-frontnum = 8
-
+frontnum = 2
 tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_3 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
-
-
-# Delete duplicated TELEPHONE NO.,remain distinct TELEPHONE NO.
+# Delete duplicated (WORKNAME,TEL).,remain distinct (WORKNAME,TEL).
 df_M_AFR_AP_3 = df_M_AFR_AP_3.drop_duplicates(['WORK_NAME','TEL'])
 # Delete duplicated TEL,remain distinct TEL
 #df_M_AFR_AP_3 = df_M_AFR_AP_3[df_M_AFR_AP_3.TEL.notnull()].drop_duplicates(['TEL'])
-
-df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.str.slice(0,frontnum)                             
+df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.str.slice(0,frontnum)
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_3_bad_name_cnt = df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL']\
-                        [df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL'].values>1] 
+                        [df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL'].values>1]
 df_M_AFR_AP_3_bad_name = df_M_AFR_AP_3_bad_name_cnt.index
 df_M_AFR_AP_3_bad = df_phone_company_address[df_phone_company_address.WORK_NAME.isin(df_M_AFR_AP_3_bad_name)]
 # find the original index
@@ -200,13 +194,8 @@ else:
 ratio_M_AFR_AP_3 = float(count_bad_M_AFR_AP_3)/hit_bad_M_AFR_AP_3
 # input into result
 in_df = {'rule':rule,'effective':h_M_AFR_AP_3,'hit_counts':hit_bad_M_AFR_AP_3,'is_in_bad':c_M_AFR_AP_3,'in_bad_ratio':ratio_M_AFR_AP_3}
-result = result.append(in_df,ignore_index = True)  
+result = result.append(in_df,ignore_index = True)
 toc = time.time()
 print ('M_AFR_AP_3 finished')
 print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
-
-
-
-
-
