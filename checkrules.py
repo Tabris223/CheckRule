@@ -158,15 +158,17 @@ print ('\n')
 # Checking M_AFR_AP_3(same work_name diff telephone[:frontnum])
 rule = 'M_AFR_AP_3'
 print ('Checking M_AFR_AP_3...')
-frontnum = 2
+frontnum = 6
 tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_3 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
+df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.str.slice(0,frontnum)
+
 # Delete duplicated (WORKNAME,TEL).,remain distinct (WORKNAME,TEL).
 df_M_AFR_AP_3 = df_M_AFR_AP_3.drop_duplicates(['WORK_NAME','TEL'])
 # Delete duplicated TEL,remain distinct TEL
 #df_M_AFR_AP_3 = df_M_AFR_AP_3[df_M_AFR_AP_3.TEL.notnull()].drop_duplicates(['TEL'])
-df_M_AFR_AP_3.TEL = df_M_AFR_AP_3.TEL.str.slice(0,frontnum)
+
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_3_bad_name_cnt = df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL']\
                         [df_M_AFR_AP_3.groupby(by = 'WORK_NAME').count()['TEL'].values>1]
