@@ -60,6 +60,8 @@ df_forth_phone_company = change_col_name1(df_forth_phone_company)
 
 # Concat all the seperated dataframe into one
 df_phone_company_address = pd.concat([df_main_phone_company,df_second_phone_company,df_third_phone_company,df_forth_phone_company])
+df_phone_company_address['TEL'][df_phone_company_address['TEL'].notnull()] = \
+                        df_phone_company_address['TEL'][df_phone_company_address['TEL'].notnull()].astype('str')
 
 
 '''Checking M_AFR_AP_1(same telephone diff work_name)'''
@@ -483,6 +485,11 @@ df_forth_home_phone_add = change_col_name2(df_forth_home_phone_add)
 
 # Concat all the seperated dataframe into one
 df_home_phone_add = pd.concat([df_main_home_phone_add,df_second_home_phone_add,df_third_home_phone_add,df_forth_home_phone_add])
+df_home_phone_add['HOME_PHONE'][df_home_phone_add['HOME_PHONE'].notnull()] = \
+                        df_home_phone_add['HOME_PHONE'][df_home_phone_add['HOME_PHONE'].notnull()].astype('str')
+
+
+
 
 '''Checking M_AFR_AP_9(same HOMEADDR diff HOME_PHONE)'''
 rule = 'M_AFR_AP_9'
@@ -574,4 +581,81 @@ toc = time.time()
 print ('M_AFR_AP_10 finished')
 print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
+
+
+'''
+Rule: M_AFR_AP_11 ~ 18
+
+The features of above rules as below:
+Primary applicant's
+1. HOMEADDR
+2. IDNO
+3. HOME_PHONE
+4. CONTRACTADDR
+5. MOBILEPHONE
+
+The strategy of checking these rules:
+1. Seperate the Feature columns out of 'Info_sheet' of primary aplicant
+2. Change the column's name to ['HOMEADDR','IDNO','HOME_PHONE','CONTRACTADDR','MOBILEPHONE']
+3. Count the other features by grouping the specific one
+'''
+
+# create a DataFrame including HOME_PHONE and HOMEADDR
+def change_col_name3(dataframes):
+    dataframes.columns = ['HOMEADDR','IDNO','HOME_PHONE','CONTRACTADDR','MOBILEPHONE']
+    dataframes['ori_index'] = dataframes.index
+    return dataframes
+
+# Seperate the Feature columns out of 'Info_sheet' of primary aplicant
+# Primary applicant
+df_main_pri = df_rule_check[['AP_HOMEADDR1','AP_IDNO','AP_HOMEPHONE','AP_CONTRACTADDR','AP_MOBILEPHONE']]
+# Change the column's name to ['TEL','NAME','ADDRESS']
+df_main_pri = change_col_name3(df_main_pri)
+df_main_pri['MOBILEPHONE'][df_main_pri['MOBILEPHONE'].notnull()] = df_main_pri['MOBILEPHONE'][df_main_pri['MOBILEPHONE'].notnull()].astype('int64').astype('str')
+
+'''Checking M_AFR_AP_11(same HOMEADDR diff IDNO)'''
+rule = 'M_AFR_AP_11'
+print ('Checking M_AFR_AP_11...')
+tic = time.time()
+# Select the records with notnull HOMEADDR
+df_M_AFR_AP_11 = df_main_pri[df_main_pri.HOMEADDR.notnull()]
+
+# Delete duplicated (IDNO,HOMEADDR).,remain distinct (IDNO,HOMEADDR).
+df_M_AFR_AP_11 = df_M_AFR_AP_11.drop_duplicates(['HOMEADDR','IDNO'])
+# Delete duplicated IDNO,remain distinct IDNO
+#df_M_AFR_AP_11 = df_M_AFR_AP_11[df_M_AFR_AP_11.IDNO.notnull()].drop_duplicates(['IDNO'])
+
+# Single HOMEADDR with lots IDNO
+df_M_AFR_AP_11_bad_add_cnt = df_M_AFR_AP_11.groupby(by = 'HOMEADDR').count()['IDNO']\
+                        [df_M_AFR_AP_11.groupby(by = 'HOMEADDR').count()['IDNO'].values>1]
+df_M_AFR_AP_11_bad_add = df_M_AFR_AP_11_bad_add_cnt.index
+df_M_AFR_AP_11_bad = df_main_pri[df_main_pri.HOMEADDR.isin(df_M_AFR_AP_11_bad_add)]
+# find the original index
+M_AFR_AP_11_bad_index = set(df_M_AFR_AP_11_bad.ori_index)
+# M_AFR_AP_11's bad list
+M_AFR_AP_11_bad_list = df_rule_check.loc[M_AFR_AP_11_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_11 = len(M_AFR_AP_11_bad_list)
+# The number of records in black list which was detectd by the rules
+count_bad_M_AFR_AP_11 = len(M_AFR_AP_11_bad_list[M_AFR_AP_11_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_11 != 0:
+    h_M_AFR_AP_11 = 1
+else:
+    h_M_AFR_AP_11 = 0
+if count_bad_M_AFR_AP_11 != 0:
+    c_M_AFR_AP_11 = 1
+else:
+    c_M_AFR_AP_11 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_11 = float(count_bad_M_AFR_AP_11)/hit_bad_M_AFR_AP_11
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_11,'hit_counts':hit_bad_M_AFR_AP_11,'is_in_bad':c_M_AFR_AP_11,'in_bad_ratio':ratio_M_AFR_AP_11}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_11 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
+
 
