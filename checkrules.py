@@ -596,13 +596,13 @@ Primary applicant's
 
 The strategy of checking these rules:
 1. Seperate the Feature columns out of 'Info_sheet' of primary aplicant
-2. Change the column's name to ['HOMEADDR','IDNO','HOME_PHONE','CONTRACTADDR','MOBILEPHONE']
+2. Change the column's name to ['HOMEADDR','IDNO','HOMEPHONE','CONTRACTADDR','MOBILEPHONE']
 3. Count the other features by grouping the specific one
 '''
 
 # create a DataFrame including HOME_PHONE and HOMEADDR
 def change_col_name3(dataframes):
-    dataframes.columns = ['HOMEADDR','IDNO','HOME_PHONE','CONTRACTADDR','MOBILEPHONE']
+    dataframes.columns = ['HOMEADDR','IDNO','HOMEPHONE','CONTRACTADDR','MOBILEPHONE']
     dataframes['ori_index'] = dataframes.index
     return dataframes
 
@@ -612,6 +612,9 @@ df_main_pri = df_rule_check[['AP_HOMEADDR1','AP_IDNO','AP_HOMEPHONE','AP_CONTRAC
 # Change the column's name to ['TEL','NAME','ADDRESS']
 df_main_pri = change_col_name3(df_main_pri)
 df_main_pri['MOBILEPHONE'][df_main_pri['MOBILEPHONE'].notnull()] = df_main_pri['MOBILEPHONE'][df_main_pri['MOBILEPHONE'].notnull()].astype('int64').astype('str')
+df_main_pri['HOMEPHONE'][df_main_pri['HOMEPHONE'].notnull()] = df_main_pri['HOMEPHONE'][df_main_pri['HOMEPHONE'].notnull()].astype('int64').astype('str')
+
+
 
 '''Checking M_AFR_AP_11(same HOMEADDR diff IDNO)'''
 rule = 'M_AFR_AP_11'
@@ -658,4 +661,141 @@ print ('M_AFR_AP_11 finished')
 print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
 
+
+'''Checking M_AFR_AP_12(same HOMEPHONE diff IDNO)'''
+rule = 'M_AFR_AP_12'
+print ('Checking M_AFR_AP_12...')
+tic = time.time()
+# Select the records with notnull HOMEPHONE
+df_M_AFR_AP_12 = df_main_pri[df_main_pri.HOMEPHONE.notnull()]
+
+# Delete duplicated (IDNO,HOMEPHONE).,remain distinct (IDNO,HOMEPHONE).
+df_M_AFR_AP_12 = df_M_AFR_AP_12.drop_duplicates(['HOMEPHONE','IDNO'])
+# Delete duplicated IDNO,remain distinct IDNO
+#df_M_AFR_AP_12 = df_M_AFR_AP_12[df_M_AFR_AP_12.IDNO.notnull()].drop_duplicates(['IDNO'])
+
+# Single HOMEPHONE with lots IDNO
+df_M_AFR_AP_12_bad_phone_cnt = df_M_AFR_AP_12.groupby(by = 'HOMEPHONE').count()['IDNO']\
+                        [df_M_AFR_AP_12.groupby(by = 'HOMEPHONE').count()['IDNO'].values>1]
+df_M_AFR_AP_12_bad_phone = df_M_AFR_AP_12_bad_phone_cnt.index
+df_M_AFR_AP_12_bad = df_main_pri[df_main_pri.HOMEPHONE.isin(df_M_AFR_AP_12_bad_phone)]
+# find the original index
+M_AFR_AP_12_bad_index = set(df_M_AFR_AP_12_bad.ori_index)
+# M_AFR_AP_12's bad list
+M_AFR_AP_12_bad_list = df_rule_check.loc[M_AFR_AP_12_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_12 = len(M_AFR_AP_12_bad_list)
+# The number of records in black list which was detectd by the rules
+count_bad_M_AFR_AP_12 = len(M_AFR_AP_12_bad_list[M_AFR_AP_12_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_12 != 0:
+    h_M_AFR_AP_12 = 1
+else:
+    h_M_AFR_AP_12 = 0
+if count_bad_M_AFR_AP_12 != 0:
+    c_M_AFR_AP_12 = 1
+else:
+    c_M_AFR_AP_12 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_12 = float(count_bad_M_AFR_AP_12)/hit_bad_M_AFR_AP_12
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_12,'hit_counts':hit_bad_M_AFR_AP_12,'is_in_bad':c_M_AFR_AP_12,'in_bad_ratio':ratio_M_AFR_AP_12}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_12 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
+
+
+'''Checking M_AFR_AP_13(same CONTRACTADDR diff IDNO)'''
+rule = 'M_AFR_AP_13'
+print ('Checking M_AFR_AP_13...')
+tic = time.time()
+# Select the records with notnull CONTRACTADDR
+df_M_AFR_AP_13 = df_main_pri[df_main_pri.CONTRACTADDR.notnull()]
+
+# Delete duplicated (IDNO,CONTRACTADDR).,remain distinct (IDNO,CONTRACTADDR).
+df_M_AFR_AP_13 = df_M_AFR_AP_13.drop_duplicates(['CONTRACTADDR','IDNO'])
+# Delete duplicated IDNO,remain distinct IDNO
+#df_M_AFR_AP_13 = df_M_AFR_AP_13[df_M_AFR_AP_13.IDNO.notnull()].drop_duplicates(['IDNO'])
+
+# Single CONTRACTADDR with lots IDNO
+df_M_AFR_AP_13_bad_conadd_cnt = df_M_AFR_AP_13.groupby(by = 'CONTRACTADDR').count()['IDNO']\
+                        [df_M_AFR_AP_13.groupby(by = 'CONTRACTADDR').count()['IDNO'].values>1]
+df_M_AFR_AP_13_bad_conadd = df_M_AFR_AP_13_bad_conadd_cnt.index
+df_M_AFR_AP_13_bad = df_main_pri[df_main_pri.CONTRACTADDR.isin(df_M_AFR_AP_13_bad_conadd)]
+# find the original index
+M_AFR_AP_13_bad_index = set(df_M_AFR_AP_13_bad.ori_index)
+# M_AFR_AP_13's bad list
+M_AFR_AP_13_bad_list = df_rule_check.loc[M_AFR_AP_13_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_13 = len(M_AFR_AP_13_bad_list)
+# The number of records in black list which was detectd by the rules
+count_bad_M_AFR_AP_13 = len(M_AFR_AP_13_bad_list[M_AFR_AP_13_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_13 != 0:
+    h_M_AFR_AP_13 = 1
+else:
+    h_M_AFR_AP_13 = 0
+if count_bad_M_AFR_AP_13 != 0:
+    c_M_AFR_AP_13 = 1
+else:
+    c_M_AFR_AP_13 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_13 = float(count_bad_M_AFR_AP_13)/hit_bad_M_AFR_AP_13
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_13,'hit_counts':hit_bad_M_AFR_AP_13,'is_in_bad':c_M_AFR_AP_13,'in_bad_ratio':ratio_M_AFR_AP_13}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_13 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
+
+
+'''Checking M_AFR_AP_14(same MOBILEPHONE diff IDNO)'''
+rule = 'M_AFR_AP_14'
+print ('Checking M_AFR_AP_14...')
+tic = time.time()
+# Select the records with notnull MOBILEPHONE
+df_M_AFR_AP_14 = df_main_pri[df_main_pri.MOBILEPHONE.notnull()]
+
+# Delete duplicated (IDNO,MOBILEPHONE).,remain distinct (IDNO,MOBILEPHONE).
+df_M_AFR_AP_14 = df_M_AFR_AP_14.drop_duplicates(['MOBILEPHONE','IDNO'])
+# Delete duplicated IDNO,remain distinct IDNO
+#df_M_AFR_AP_14 = df_M_AFR_AP_14[df_M_AFR_AP_14.IDNO.notnull()].drop_duplicates(['IDNO'])
+
+# Single MOBILEPHONE with lots IDNO
+df_M_AFR_AP_14_bad_mob_cnt = df_M_AFR_AP_14.groupby(by = 'MOBILEPHONE').count()['IDNO']\
+                        [df_M_AFR_AP_14.groupby(by = 'MOBILEPHONE').count()['IDNO'].values>1]
+df_M_AFR_AP_14_bad_mob = df_M_AFR_AP_14_bad_mob_cnt.index
+df_M_AFR_AP_14_bad = df_main_pri[df_main_pri.MOBILEPHONE.isin(df_M_AFR_AP_14_bad_mob)]
+# find the original index
+M_AFR_AP_14_bad_index = set(df_M_AFR_AP_14_bad.ori_index)
+# M_AFR_AP_14's bad list
+M_AFR_AP_14_bad_list = df_rule_check.loc[M_AFR_AP_14_bad_index]
+# Counts the numbers
+# The number of records hit the rules
+hit_bad_M_AFR_AP_14 = len(M_AFR_AP_14_bad_list)
+# The number of records in black list which was detectd by the rules
+count_bad_M_AFR_AP_14 = len(M_AFR_AP_14_bad_list[M_AFR_AP_14_bad_list.bad == 1])
+# Flags
+if hit_bad_M_AFR_AP_14 != 0:
+    h_M_AFR_AP_14 = 1
+else:
+    h_M_AFR_AP_14 = 0
+if count_bad_M_AFR_AP_14 != 0:
+    c_M_AFR_AP_14 = 1
+else:
+    c_M_AFR_AP_14 = 0
+# Cover ratio of Black list
+ratio_M_AFR_AP_14 = float(count_bad_M_AFR_AP_14)/hit_bad_M_AFR_AP_14
+# input into result
+in_df = {'rule':rule,'effective':h_M_AFR_AP_14,'hit_counts':hit_bad_M_AFR_AP_14,'is_in_bad':c_M_AFR_AP_14,'in_bad_ratio':ratio_M_AFR_AP_14}
+result = result.append(in_df,ignore_index = True)
+toc = time.time()
+print ('M_AFR_AP_14 finished')
+print ('cost time: %.2fs' %(toc-tic))
+print ('\n')
 
