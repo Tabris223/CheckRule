@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 from pandas import Series,DataFrame
 import time
 
+
 # Basic Infomation sheet's directory
 Info_sheet = r"E:\\AntiFraud\\app_pboc_s.xlsx"
 # Save into DataFrame
-df = pd.read_excel(Info_sheet)
+#df = pd.read_excel(Info_sheet)
 df_rule_check = df.copy()
-
 
 
 '''
@@ -61,13 +61,15 @@ df_forth_phone_company = change_col_name(df_forth_phone_company)
 # Concat all the seperated dataframe into one                               
 df_phone_company_address = pd.concat([df_main_phone_company,df_second_phone_company,df_third_phone_company,df_forth_phone_company])
 
+
 # Checking M_AFR_AP_1(same telephone diff work_name)
 rule = 'M_AFR_AP_1'
 print ('Checking M_AFR_AP_1...')
+tic = time.time()
 # Select the records with notnull telephone no.
 df_M_AFR_AP_1 = df_phone_company_address[df_phone_company_address.TEL.notnull()]
 # Delete duplicated WORK_NAME,remain distinct WORK_NAME
-df_M_AFR_AP_1 = df_M_AFR_AP_1.drop_duplicates('WORK_NAME')
+df_M_AFR_AP_1 = df_M_AFR_AP_1.drop_duplicates(['TEL','WORK_NAME'])
 # Single Telephone with lots WORK_NAME
 df_M_AFR_AP_1_bad_phone_cnt = df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME']\
                         [df_M_AFR_AP_1.groupby(by = 'TEL').count()['WORK_NAME'].values>1] 
@@ -92,11 +94,13 @@ if count_bad_M_AFR_AP_1 != 0:
 else:
     c_M_AFR_AP_1 = 0
 # Cover ratio of Black list
-ratio_M_AFR_AP_1 = count_bad_M_AFR_AP_1/hit_bad_M_AFR_AP_1
+ratio_M_AFR_AP_1 = float(count_bad_M_AFR_AP_1)/hit_bad_M_AFR_AP_1
 # input into result
 in_df = {'rule':[rule],'effective':[h_M_AFR_AP_1],'hit_counts':hit_bad_M_AFR_AP_1,'is_in_bad':[c_M_AFR_AP_1],'in_bad_ratio':[ratio_M_AFR_AP_1]}
 result = DataFrame(in_df)   
+toc = time.time()
 print ('M_AFR_AP_1 finished')
+print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
 
 
@@ -104,10 +108,11 @@ print ('\n')
 # Checking M_AFR_AP_2(same work_name diff telephone)
 rule = 'M_AFR_AP_2'
 print ('Checking M_AFR_AP_2...')
+tic = time.time()
 # Select the records with notnull work name.s
 df_M_AFR_AP_2 = df_phone_company_address[df_phone_company_address.WORK_NAME.notnull()]
 # Delete duplicated TELEPHONE NO.,remain distinct TELEPHONE NO.
-df_M_AFR_AP_2 = df_M_AFR_AP_2.drop_duplicates('TEL')
+df_M_AFR_AP_2 = df_M_AFR_AP_2.drop_duplicates(['WORK_NAME','TEL'])
 # Single WORK_NAME with lots TELEPHONE NO.
 df_M_AFR_AP_2_bad_name_cnt = df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL']\
                         [df_M_AFR_AP_2.groupby(by = 'WORK_NAME').count()['TEL'].values>1] 
@@ -132,15 +137,14 @@ if count_bad_M_AFR_AP_2 != 0:
 else:
     c_M_AFR_AP_2 = 0
 # Cover ratio of Black list
-ratio_M_AFR_AP_2 = count_bad_M_AFR_AP_2/hit_bad_M_AFR_AP_2
+ratio_M_AFR_AP_2 = float(count_bad_M_AFR_AP_2)/hit_bad_M_AFR_AP_2
 # input into result
 in_df = {'rule':rule,'effective':h_M_AFR_AP_2,'hit_counts':hit_bad_M_AFR_AP_2,'is_in_bad':c_M_AFR_AP_2,'in_bad_ratio':ratio_M_AFR_AP_2}
 result = result.append(in_df,ignore_index = True)  
+toc = time.time()
 print ('M_AFR_AP_2 finished')
+print ('cost time: %.2fs' %(toc-tic))
 print ('\n')
-
-
-
 
 
 
